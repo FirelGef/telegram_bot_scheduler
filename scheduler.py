@@ -384,7 +384,7 @@ async def get_all(message: types.Message):
     msg = ''
     for uid in all_users_ids.keys():
         tg_name = all_users_ids[uid]['UTag']
-        nick = all_users_ids[uid]['UTag']
+        nick = all_users_ids[uid]['custom_title']
         msg += f'ID: {uid}\tTGName: {tg_name}\tGame Nick: {nick}\n'
     if len(all_users_ids.keys()):
         await message.answer(msg)
