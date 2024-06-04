@@ -375,6 +375,23 @@ async def call_all(message: types.Message):
         msg += custom_message
         await bot.send_message(chat_id=GROUP_CHAT_ID, text=msg, parse_mode='HTML')
 
+
+@dp.message(Command("get_all"))
+async def get_all(message: types.Message):
+    if message.from_user.id not in ALLOWED_USERS:
+        await message.reply('У вас нет доступа к использованию этого бота.')
+        return
+    msg = ''
+    for uid in all_users_ids.keys():
+        tg_name = all_users_ids[uid]['UTag']
+        nick = all_users_ids[uid]['UTag']
+        msg += f'ID: {uid}\tTGName: {tg_name}\tGame Nick: {nick}\n'
+    if len(all_users_ids.keys()):
+        await message.answer(msg)
+    else:
+        await message.reply(f'Нет записей о пользователях, выполните команду /start. Если ошибка повторяется обратитесь к {__AUTHOR__}')
+
+
 @dp.message(Command("help"))
 async def help_command(message: types.Message):
     logger.info(f'help(): {message.from_user.id}')
@@ -385,6 +402,7 @@ async def help_command(message: types.Message):
         "=====================================================================================\n"
         "Доступные команды:\n\n"
         "- start - Запустить бота и сформировать информацию по пользователям\n\n"
+        "- get_all - получить список доступных для призыва пользователей\n\n"
         "- call_user - Вызвать пользователя в указанное время\n"
         "        Использование: [@<TGName> или user_id] [время в формате HH:MM] [сообщение]\n\n"
         "- call_all - Вызвать всех пользователей с ролью админ\n\n"
