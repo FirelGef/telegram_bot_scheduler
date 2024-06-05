@@ -413,16 +413,19 @@ async def get_new(message: types.Message):
     all_ids = all_users_ids.keys()
     df = pd.read_csv(gurl)
     msg = ''
+    table_user_ids = []
     for val in df.values:
         user_id = val[0]
         if not isinstance(user_id, int):
             logger.warning(
                 f'ID {user_id} {type(user_id)} пользователя не заполнено. {val[0]}, {val[1]}, {val[2]}, {val[3]}')
             continue
-        if user_id not in all_ids:
-            nick = all_users_ids[user_id]['custom_title']
-            tg_name = all_users_ids[user_id]['UTag']
-            msg += f'ID: {user_id}\tGame Nick: {nick}\tTGName: {tg_name}\n'
+        table_user_ids.append(user_id)
+    for uid in all_ids:
+        if uid not in table_user_ids:
+            nick = all_users_ids[uid]['custom_title']
+            tg_name = all_users_ids[uid]['UTag']
+            msg += f'ID: {uid}\tGame Nick: {nick}\tTGName: {tg_name}\n'
     if msg:
         await message.answer(msg)
     elif not all_ids:
