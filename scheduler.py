@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 
 __AUTHOR__ = '@FirelGef'
 
+__version__ = 1.1
 
 config = configparser.ConfigParser()  # создаём объекта парсера
 config.read("config.ini")  # читаем конфиг
@@ -47,7 +48,6 @@ scheduler = AsyncIOScheduler()
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
-
 
 emojis = [
     "\U0001F600",  # grinning
@@ -187,6 +187,7 @@ emojis = [
     "\U0001F90D"   # white_heart
 ]
 
+
 @dp.message(Command("start"))
 async def start(message: types.Message):
     logger.info(f'start(): user: {message.from_user.id} chat_id: {message.chat.id}')
@@ -247,8 +248,10 @@ async def call_user(message: types.Message):
             user_name = all_users_ids[int(nick)]['UTag']
             user_id = nick
         else:
-            logger.warning(f'Ошибка в ID пользователя: {nick}. ID должен начинаться с символа "@" или быть id пользователя')
-            await message.reply(f'Ошибка в ID пользователя: {nick}. ID должен начинаться с символа "@" или быть id пользователя')
+            logger.warning(
+                f'Ошибка в ID пользователя: {nick}. ID должен начинаться с символа "@" или быть id пользователя')
+            await message.reply(
+                f'Ошибка в ID пользователя: {nick}. ID должен начинаться с символа "@" или быть id пользователя')
             return
     except:
         logger.warning('Неизвестное имя пользователя')
@@ -285,9 +288,10 @@ async def start_timer(message: types.Message):
     line_count = 0
     for val in df.values:
         try:
-            user_id, title, nick, stime,  = val[0], val[1], val[2], val[3]
-            if type(nick) != str or type(stime) != str or type(user_id) != int:
-                logger.warning(f'ID {user_id} {type(user_id)} пользователя или Time {stime} {type(stime)} не заполнено. {val[0]}, {val[1]}, {val[2]}, {val[3]}')
+            user_id, title, nick, stime, = val[0], val[1], val[2], val[3]
+            if isinstance(nick, str) or isinstance(stime, str) or isinstance(user_id, int):
+                logger.warning(
+                    f'ID {user_id} {type(user_id)} пользователя или Time {stime} {type(stime)} не заполнено. {val[0]}, {val[1]}, {val[2]}, {val[3]}')
                 # await message.reply(f'Nick, ID пользователя или Time не заполнено.')
                 continue
             user_id = int(user_id)
@@ -302,18 +306,21 @@ async def start_timer(message: types.Message):
             trigger = DateTrigger(run_date=call_datetime)
             job = scheduler.add_job(send_message, trigger, args=[title, user_id, 'Вестник!'])
             dict_all_jobs[f'{user_id}'] = {'time': f'{call_datetime.strftime("%Y-%m-%d %H:%M")}', 'id': f'{job.id}'}
-            line_count+=1
+            line_count += 1
             # await message.answer(f'Пользователь {title} будет вызван в {call_datetime.strftime("%Y-%m-%d %H:%M")}')
         except ValueError:
             await message.reply(f'Неправильный формат времени: {stime}. Используйте HH:MM.')
     await message.reply(f'{line_count}/{all_line} призывов запланировано.')
 
+
 @dp.message(Command("all_jobs"))
 async def all_jobs(message: types.Message):
+    logger.info(f'all_jobs(): {message.from_user.id}')
     if message.from_user.id not in ALLOWED_USERS:
         await message.reply('У вас нет доступа к использованию этого бота.')
         return
     await message.reply(f'{dict_all_jobs}')
+
 
 @dp.message(Command("remove_job"))
 async def remove_job(message: types.Message):
@@ -329,9 +336,10 @@ async def remove_job(message: types.Message):
         user_name = args[1]
         scheduler.remove_job(dict_all_jobs[user_name]['id'])
         logger.info(f'Job with ID {user_name} has been removed.')
-        del(dict_all_jobs[user_name])
+        del (dict_all_jobs[user_name])
     except:
         await message.reply(f'Задача не обнаружена: {user_name}')
+
 
 @dp.message(Command("remove_all_jobs"))
 async def remove_all_jobs(message: types.Message):
@@ -344,12 +352,14 @@ async def remove_all_jobs(message: types.Message):
         try:
             scheduler.remove_job(dict_all_jobs[user_name]['id'])
             logger.info(f'Job with ID {user_name} has been removed.')
-            del(dict_all_jobs[user_name])
+            del (dict_all_jobs[user_name])
         except:
-            del(dict_all_jobs[user_name])
+            del (dict_all_jobs[user_name])
+
 
 @dp.message(Command("call_all"))
 async def call_all(message: types.Message):
+    logger.info(f'call_all(): {message.from_user.id}')
     if message.from_user.id not in ALLOWED_USERS:
         await message.reply('У вас нет доступа к использованию этого бота.')
         return
@@ -378,6 +388,7 @@ async def call_all(message: types.Message):
 
 @dp.message(Command("get_all"))
 async def get_all(message: types.Message):
+    logger.info(f'get_all(): {message.from_user.id}')
     if message.from_user.id not in ALLOWED_USERS:
         await message.reply('У вас нет доступа к использованию этого бота.')
         return
@@ -389,7 +400,36 @@ async def get_all(message: types.Message):
     if len(all_users_ids.keys()):
         await message.answer(msg)
     else:
-        await message.reply(f'Нет записей о пользователях, выполните команду /start. Если ошибка повторяется обратитесь к {__AUTHOR__}')
+        await message.reply(
+            f'Нет записей о пользователях, выполните команду /start. Если ошибка повторяется обратитесь к {__AUTHOR__}')
+
+
+@dp.message(Command("get_new"))
+async def get_new(message: types.Message):
+    logger.info(f'get_new(): {message.from_user.id}')
+    if message.from_user.id not in ALLOWED_USERS:
+        await message.reply('У вас нет доступа к использованию этого бота.')
+        return
+    all_ids = all_users_ids.keys()
+    df = pd.read_csv(gurl)
+    msg = ''
+    for val in df.values:
+        user_id = val[0]
+        if isinstance(user_id, int):
+            logger.warning(
+                f'ID {user_id} {type(user_id)} пользователя не заполнено. {val[0]}, {val[1]}, {val[2]}, {val[3]}')
+            continue
+        if user_id not in all_ids:
+            nick = all_users_ids[user_id]['custom_title']
+            tg_name = all_users_ids[user_id]['UTag']
+            msg += f'ID: {user_id}\tGame Nick: {nick}\tTGName: {tg_name}\n'
+    if msg:
+        await message.answer(msg)
+    elif not all_ids:
+        await message.reply(
+            f'Нет записей о пользователях, выполните команду /start. Если ошибка повторяется обратитесь к {__AUTHOR__}')
+    else:
+        await message.answer('Новых пользователей не обнаружено. Проверьте всем ли выданы права admin.')
 
 
 @dp.message(Command("help"))
@@ -403,6 +443,7 @@ async def help_command(message: types.Message):
         "Доступные команды:\n\n"
         "- start - Запустить бота и сформировать информацию по пользователям\n\n"
         "- get_all - получить список доступных для призыва пользователей\n\n"
+        "- get_new - получить список пользователей, которые не обнаружены в таблице\n\n"
         "- call_user - Вызвать пользователя в указанное время\n"
         "        Использование: [@<TGName> или user_id] [время в формате HH:MM] [сообщение]\n\n"
         "- call_all - Вызвать всех пользователей с ролью админ\n\n"
@@ -423,11 +464,10 @@ async def send_message(nick, user_id, text):
     await bot.send_message(chat_id=GROUP_CHAT_ID, text=message, parse_mode='HTML')
 
 
-
 async def main():
     scheduler.start()
     await dp.start_polling(bot)
 
 
 if __name__ == '__main__':
-   asyncio.run(main())
+    asyncio.run(main())
