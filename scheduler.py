@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 
 __AUTHOR__ = '@FirelGef'
 
-__version__ = 1.1
+__version__ = "1.1.1"
 
 config = configparser.ConfigParser()  # создаём объекта парсера
 config.read("config.ini")  # читаем конфиг
@@ -184,7 +184,7 @@ emojis = [
     "\U0001F49C",  # purple_heart
     "\U0001F90E",  # brown_heart
     "\U0001F5A4",  # black_heart
-    "\U0001F90D"   # white_heart
+    "\U0001F90D"  # white_heart
 ]
 
 
@@ -289,7 +289,7 @@ async def start_timer(message: types.Message):
     for val in df.values:
         try:
             user_id, title, nick, stime, = val[0], val[1], val[2], val[3]
-            if isinstance(nick, str) or isinstance(stime, str) or isinstance(user_id, int):
+            if not isinstance(nick, str) or not isinstance(stime, str) or not isinstance(user_id, int):
                 logger.warning(
                     f'ID {user_id} {type(user_id)} пользователя или Time {stime} {type(stime)} не заполнено. {val[0]}, {val[1]}, {val[2]}, {val[3]}')
                 # await message.reply(f'Nick, ID пользователя или Time не заполнено.')
@@ -415,7 +415,7 @@ async def get_new(message: types.Message):
     msg = ''
     for val in df.values:
         user_id = val[0]
-        if isinstance(user_id, int):
+        if not isinstance(user_id, int):
             logger.warning(
                 f'ID {user_id} {type(user_id)} пользователя не заполнено. {val[0]}, {val[1]}, {val[2]}, {val[3]}')
             continue
