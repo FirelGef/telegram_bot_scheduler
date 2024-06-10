@@ -3,6 +3,7 @@ import configparser
 import logging
 import pandas as pd
 import random
+import copy
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
@@ -12,7 +13,7 @@ from datetime import datetime, timedelta
 
 __AUTHOR__ = '@FirelGef'
 
-__version__ = "1.1.1"
+__version__ = "1.1.3"
 
 config = configparser.ConfigParser()  # создаём объекта парсера
 config.read("config.ini")  # читаем конфиг
@@ -195,37 +196,41 @@ async def start(message: types.Message):
         await message.reply('У вас нет доступа к использованию этого бота.')
         return
     admins = await bot.get_chat_administrators(GROUP_CHAT_ID)
-
-    for admin in admins:
-        emoji = random.choice(emojis)
-        emojis.remove(emoji)
-        all_users[f'@{admin.user.username}'] = {
-            'id': admin.user.id,
-            'FName': admin.user.first_name,
-            'LName': admin.user.last_name,
-            'emoji': emoji,
-            'custom_title': admin.custom_title
-        }
-        all_users_ids[admin.user.id] = {
-            'UTag': f'@{admin.user.username}',
-            'FName': admin.user.first_name,
-            'LName': admin.user.last_name,
-            'emoji': emoji,
-            'custom_title': admin.custom_title
-        }
-        log_info = "\n".join(
-            [
-                f"User ID: {admin.user.id}\n"
-                f"First Name: {admin.user.first_name}\n"
-                f"Last Name: {admin.user.last_name}\n"
-                f"Username: @{admin.user.username}\n"
-                f"Status: {admin.status}\n"
-                f'Custom Title: {admin.custom_title}\n'
-                "-----"
-            ]
-        )
-        logger.info(log_info)
-    await message.reply('Бот запущен!')
+    emojis_cp = copy.deepcopy(emojis)
+    try:
+        for admin in admins:
+            emoji = random.choice(emojis_cp)
+            emojis_cp.remove(emoji)
+            all_users[f'@{admin.user.username}'] = {
+                'id': admin.user.id,
+                'FName': admin.user.first_name,
+                'LName': admin.user.last_name,
+                'emoji': emoji,
+                'custom_title': admin.custom_title
+            }
+            all_users_ids[admin.user.id] = {
+                'UTag': f'@{admin.user.username}',
+                'FName': admin.user.first_name,
+                'LName': admin.user.last_name,
+                'emoji': emoji,
+                'custom_title': admin.custom_title
+            }
+            log_info = "\n".join(
+                [
+                    f"User ID: {admin.user.id}\n"
+                    f"First Name: {admin.user.first_name}\n"
+                    f"Last Name: {admin.user.last_name}\n"
+                    f"Username: @{admin.user.username}\n"
+                    f"Status: {admin.status}\n"
+                    f'Custom Title: {admin.custom_title}\n'
+                    "-----"
+                ]
+            )
+            logger.info(log_info)
+        await message.reply('Бот запущен!')
+    except Exception as err:
+        logger.error(f'start(): something wrong! Error: {err}')
+        await message.reply(f'Что-то пошло не так! Обратитесь к {__AUTHOR__} для решения проблемы.')
 
 
 @dp.message(Command("call_user"))
