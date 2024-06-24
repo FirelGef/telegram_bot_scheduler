@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 __AUTHOR__ = '@FirelGef'
 
-__version__ = "1.1.3"
+__version__ = "1.1.4"
 
 config = configparser.ConfigParser()  # создаём объекта парсера
 config.read("config.ini")  # читаем конфиг
@@ -294,7 +294,7 @@ async def start_timer(message: types.Message):
     for val in df.values:
         try:
             user_id, title, nick, stime, = val[0], val[1], val[2], val[3]
-            if not isinstance(nick, str) or not isinstance(stime, str) or not isinstance(user_id, int):
+            if not isinstance(nick, str) or not isinstance(stime, str) or not isinstance(user_id, (int, float)):
                 logger.warning(
                     f'ID {user_id} {type(user_id)} пользователя или Time {stime} {type(stime)} не заполнено. {val[0]}, {val[1]}, {val[2]}, {val[3]}')
                 # await message.reply(f'Nick, ID пользователя или Time не заполнено.')
