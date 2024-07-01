@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 __AUTHOR__ = '@FirelGef'
 
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 
 config = configparser.ConfigParser()  # создаём объекта парсера
 config.read("config.ini")  # читаем конфиг
@@ -248,9 +248,9 @@ async def check_available(message: types.Message):
         nick = all_users_ids[user_id]['custom_title']
         msg += f'ID: {user_id}\tGame Nick: {nick}\t'
         try:
-            await bot.get_chat_member(user_id, user_id)
+            await bot.send_chat_action(user_id, action='typing')
             msg += 'Status: OK\n'
-        except (ChatNotFound, Unauthorized, TelegramForbiddenError):
+        except:
             msg += 'Status: Unauthorized\n'
     if len(all_users_ids.keys()):
         await message.answer(msg)
