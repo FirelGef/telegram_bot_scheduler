@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 __AUTHOR__ = '@FirelGef'
 
-__version__ = "2.0.1"
+__version__ = "2.0.2"
 
 config = configparser.ConfigParser()  # создаём объекта парсера
 config.read("config.ini")  # читаем конфиг
@@ -481,7 +481,7 @@ async def get_new(message: types.Message):
     table_user_ids = []
     for val in df.values:
         user_id = val[0]
-        if not isinstance(user_id, int):
+        if not isinstance(user_id, (int, float)):
             logger.warning(
                 f'ID {user_id} {type(user_id)} пользователя не заполнено. {val[0]}, {val[1]}, {val[2]}, {val[3]}')
             continue
