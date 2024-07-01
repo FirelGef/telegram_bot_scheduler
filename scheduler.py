@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 __AUTHOR__ = '@FirelGef'
 
-__version__ = "1.1.4"
+__version__ = "2.0.0"
 
 config = configparser.ConfigParser()  # создаём объекта парсера
 config.read("config.ini")  # читаем конфиг
@@ -192,6 +192,11 @@ emojis = [
 @dp.message(Command("start"))
 async def start(message: types.Message):
     logger.info(f'start(): user: {message.from_user.id} chat_id: {message.chat.id}')
+    await message.reply('Привет! Я бот, который будет будет звать тебя пробить вестника!')
+
+@dp.message(Command("prepare"))
+async def prepare(message: types.Message):
+    logger.info(f'prepare(): user: {message.from_user.id} chat_id: {message.chat.id}')
     if message.from_user.id not in ALLOWED_USERS:
         await message.reply('У вас нет доступа к использованию этого бота.')
         return
@@ -229,9 +234,29 @@ async def start(message: types.Message):
             logger.info(log_info)
         await message.reply('Бот запущен!')
     except Exception as err:
-        logger.error(f'start(): something wrong! Error: {err}')
+        logger.error(f'prepare(): something wrong! Error: {err}')
         await message.reply(f'Что-то пошло не так! Обратитесь к {__AUTHOR__} для решения проблемы.')
 
+@dp.message(Command("check_available"))
+async def check_available(message: types.Message):
+    logger.info(f'check_available(): {message.from_user.id}')
+    if message.from_user.id not in ALLOWED_USERS:
+        await message.reply('У вас нет доступа к использованию этого бота.')
+        return
+    msg = ''
+    for user_id in all_users_ids.keys():
+        nick = all_users_ids[user_id]['custom_title']
+        msg += f'ID: {user_id}\tGame Nick: {nick}\t'
+        try:
+            await bot.get_chat_member(user_id, user_id)
+            msg += 'Status: OK\n'
+        except (ChatNotFound, Unauthorized, TelegramForbiddenError):
+            msg += 'Status: Unauthorized\n'
+    if len(all_users_ids.keys()):
+        await message.answer(msg)
+    else:
+        await message.reply(
+            f'Нет записей о пользователях, выполните команду /prepare. Если ошибка повторяется обратитесь к {__AUTHOR__}')
 
 @dp.message(Command("call_user"))
 async def call_user(message: types.Message):
@@ -273,13 +298,49 @@ async def call_user(message: types.Message):
             call_datetime += timedelta(days=1)
 
         trigger = DateTrigger(run_date=call_datetime)
-        job = scheduler.add_job(send_message, trigger, args=[user_name, user_id, custom_message])
+        job = scheduler.add_job(send_message, trigger, args=[GROUP_CHAT_ID, user_name, user_id, custom_message])
         await message.reply(f'Пользователь {user_name[1:]} будет вызван в {call_datetime.strftime("%Y-%m-%d %H:%M")}')
         dict_all_jobs[f'{nick}'] = {'time': f'{call_datetime.strftime("%Y-%m-%d %H:%M")}', 'id': f'{job.id}'}
     except ValueError:
         await message.reply(f'Неправильный формат времени: {call_time}')
         await message.reply('Неправильный формат времени. Используйте HH:MM.')
 
+
+@dp.message(Command("start_group_timer"))
+async def start_group_timer(message: types.Message):
+    logger.info(f'start_group_timer(): {message.from_user.id}')
+    if message.from_user.id not in ALLOWED_USERS:
+        await message.reply('У вас нет доступа к использованию этого бота.')
+        return
+    args = message.text.split()
+    df = pd.read_csv(gurl)
+    all_line = len(df.values)
+    line_count = 0
+    for val in df.values:
+        try:
+            user_id, title, nick, stime, = val[0], val[1], val[2], val[3]
+            if not isinstance(nick, str) or not isinstance(stime, str) or not isinstance(user_id, (int, float)):
+                logger.warning(
+                    f'ID {user_id} {type(user_id)} пользователя или Time {stime} {type(stime)} не заполнено. {val[0]}, {val[1]}, {val[2]}, {val[3]}')
+                # await message.reply(f'Nick, ID пользователя или Time не заполнено.')
+                continue
+            user_id = int(user_id)
+            logger.info(f'start_group_timer(): {message.from_user.id}: user_name: {nick}, time: {stime}')
+
+            call_time = datetime.strptime(stime, '%H:%M').time()
+            now = datetime.now()
+            call_datetime = datetime.combine(now, call_time)
+            if call_datetime < now:
+                call_datetime += timedelta(days=1)
+
+            trigger = DateTrigger(run_date=call_datetime)
+            job = scheduler.add_job(send_message, trigger, args=[GROUP_CHAT_ID, title, user_id, 'Вестник!'])
+            dict_all_jobs[f'{user_id}'] = {'time': f'{call_datetime.strftime("%Y-%m-%d %H:%M")}', 'id': f'{job.id}'}
+            line_count += 1
+            # await message.answer(f'Пользователь {title} будет вызван в {call_datetime.strftime("%Y-%m-%d %H:%M")}')
+        except ValueError:
+            await message.reply(f'Неправильный формат времени: {stime}. Используйте HH:MM.')
+    await message.reply(f'{line_count}/{all_line} призывов запланировано.')
 
 @dp.message(Command("start_timer"))
 async def start_timer(message: types.Message):
@@ -309,7 +370,7 @@ async def start_timer(message: types.Message):
                 call_datetime += timedelta(days=1)
 
             trigger = DateTrigger(run_date=call_datetime)
-            job = scheduler.add_job(send_message, trigger, args=[title, user_id, 'Вестник!'])
+            job = scheduler.add_job(send_message, trigger, args=[user_id, title, user_id, 'Вестник!'])
             dict_all_jobs[f'{user_id}'] = {'time': f'{call_datetime.strftime("%Y-%m-%d %H:%M")}', 'id': f'{job.id}'}
             line_count += 1
             # await message.answer(f'Пользователь {title} будет вызван в {call_datetime.strftime("%Y-%m-%d %H:%M")}')
@@ -376,9 +437,8 @@ async def call_all(message: types.Message):
     custom_message = ' '.join(user_message) if user_message else 'Всем внимание!'
     count = 0
     msg = ''
-    for user_name in all_users_ids.keys():
-        user_id = user_name
-        user_emoji = all_users_ids[user_name]['emoji']
+    for user_id in all_users_ids.keys():
+        user_emoji = all_users_ids[user_id]['emoji']
         msg += f'<a href="tg://user?id={user_id}">{user_emoji}</a> '
         count += 1
         if count == 8:
@@ -406,7 +466,7 @@ async def get_all(message: types.Message):
         await message.answer(msg)
     else:
         await message.reply(
-            f'Нет записей о пользователях, выполните команду /start. Если ошибка повторяется обратитесь к {__AUTHOR__}')
+            f'Нет записей о пользователях, выполните команду /prepare. Если ошибка повторяется обратитесь к {__AUTHOR__}')
 
 
 @dp.message(Command("get_new"))
@@ -435,7 +495,7 @@ async def get_new(message: types.Message):
         await message.answer(msg)
     elif not all_ids:
         await message.reply(
-            f'Нет записей о пользователях, выполните команду /start. Если ошибка повторяется обратитесь к {__AUTHOR__}')
+            f'Нет записей о пользователях, выполните команду /prepare. Если ошибка повторяется обратитесь к {__AUTHOR__}')
     else:
         await message.answer('Новых пользователей не обнаружено. Проверьте всем ли выданы права admin.')
 
@@ -449,13 +509,16 @@ async def help_command(message: types.Message):
     help_text = (
         "=====================================================================================\n"
         "Доступные команды:\n\n"
-        "- start - Запустить бота и сформировать информацию по пользователям\n\n"
-        "- get_all - получить список доступных для призыва пользователей\n\n"
-        "- get_new - получить список пользователей, которые не обнаружены в таблице\n\n"
+        "- start - Инициализировать общение с ботом\n\n"
+        "- prepare - Сформировать информацию по пользователям\n\n"
+        "- check_available - Выводит информацию о доступности пользователей в ЛС\n\n"
+        "- get_all - Получить список доступных для призыва пользователей\n\n"
+        "- get_new - Получить список пользователей, которые не обнаружены в таблице\n\n"
         "- call_user - Вызвать пользователя в указанное время\n"
         "        Использование: [@<TGName> или user_id] [время в формате HH:MM] [сообщение]\n\n"
         "- call_all - Вызвать всех пользователей с ролью админ\n\n"
-        "- start_timer - Завести таймер на основе таблицы\n\n"
+        "- start_timer - Завести таймер на основе таблицы.  Сообщения будут отправляться в ЛС.\n\n"
+        "- start_group_timer - Завести таймер на основе таблицы. Сообщения будут отправляться в группу.\n\n"
         "- all_jobs - Вывести все запланированные задачи\n\n"
         "- remove_job - Удаляет задачу\n"
         "        Принимает 1 параметр: user_name: Тег телеграмма в формате @<TGName> или user_id\n\n"
@@ -467,9 +530,13 @@ async def help_command(message: types.Message):
     await message.reply(help_text)
 
 
-async def send_message(nick, user_id, text):
-    message = f'<a href="tg://user?id={user_id}">{nick}</a> {text}'
-    await bot.send_message(chat_id=GROUP_CHAT_ID, text=message, parse_mode='HTML')
+async def send_message(target_id, nick, user_id, text):
+    try:
+        message = f'<a href="tg://user?id={user_id}">{nick}</a> {text}'
+        await bot.send_message(target_id, text=message, parse_mode='HTML')
+    except Exception as err:
+        await bot.send_message(GROUP_CHAT_ID, text=f'Не удалось отправить сообщение пользователю: {user_id}', parse_mode='HTML')
+        logger.error(f'send_message(): {err}')
 
 
 async def main():
