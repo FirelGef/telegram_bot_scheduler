@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 
 __AUTHOR__ = '@FirelGef'
 
-__version__ = "2.0.2"
+__version__ = "2.0.4"
 
 config = configparser.ConfigParser()  # создаём объекта парсера
 config.read("config.ini")  # читаем конфиг
@@ -202,6 +202,8 @@ async def prepare(message: types.Message):
         return
     admins = await bot.get_chat_administrators(GROUP_CHAT_ID)
     emojis_cp = copy.deepcopy(emojis)
+    all_users.clear()
+    all_users_ids.clear()
     try:
         for admin in admins:
             emoji = random.choice(emojis_cp)
